@@ -8,17 +8,6 @@ This is a PyToch implementation of "Real-time Scene Text Detection with Differen
 
 Part of the code is inherited from [MegReader](https://github.com/Megvii-CSG/MegReader).
 
-## ToDo List
-
-- [x] Release code
-- [x] Document for Installation
-- [x] Trained models
-- [x] Document for testing and training
-- [x] Evaluation
-- [x] Demo script
-- [ ] re-organize and clean the parameters
-
-
 ## Installation
 
 ### Requirements:
@@ -60,17 +49,43 @@ Part of the code is inherited from [MegReader](https://github.com/Megvii-CSG/Meg
 ```
 #### 於Windows執行 `python setup.py build_ext --inplace`
 
-mmdetection 執行前須先進行編譯  
+以上指令用於 mmdetection 執行前的編譯  
+正確執行後會在`DB\assets\ops\dcn\build\lib.win-amd64-3.8`出現以下檔案
+```
+buildt\lib.win-amd64-3.61\deform_cony_cuda.cp36-win_amd64.pyd
+build\lib.win-amd64-3.61\deform_pool_cuda.cp36-win_am
+```
+
 ##### 常出現的錯誤
-* `assets\ops\dcn\src` 中的 `deform_conv_cuda.cpp`和`deform_pool_cuda.cpp`  
+
+###### Error 1
+```
+soft_renderer/cuda/load_textures_cuda.cpp(24): error C3861: “AT_CHECK”: 找不到标识符
+```
+###### **Solution**  
+
+>`assets\ops\dcn\src` 中的 `deform_conv_cuda.cpp`和`deform_pool_cuda.cpp`  
 將`AT_CHECK` 取代為 → `TORCH_CHECK`  
 
-* `assets\ops\dcn\src` 中的 `deform_conv_cuda_kernel.cu`和`deform_pool_cuda_kernel.cu`  
+###### Error 2
+```bash
+calling a __host__ function(“__floorf“) is not allowed
+subprocess.CalledProcessError: Command '['ninja', '-v']' returned non-zero exit status 1.
+```
+此處的`['ninja', '-v']`並沒有錯誤，`-v`是編譯所有檔案的指令  
+但若檔案內有錯誤造成無法編譯會出現以上報錯  
+
+###### **Solution**  
+>`assets\ops\dcn\src` 中的 `deform_conv_cuda_kernel.cu`和`deform_pool_cuda_kernel.cu`  
 將`floor` 取代為 → `floorf`  
 將`ceil` 取代為 → `ceilf`  
 將`round` 取代為 → `roundf`  
 
-
+##### 其他採坑參考
+* [Pytorch-DANet编译历程](https://zhuanlan.zhihu.com/p/53418563)
+* [OpenPose编译生成错误](https://blog.csdn.net/weixin_44313626/article/details/114778118)
+* [WINDOWS 下 MMCV | MMCV-full 的安装](https://zhuanlan.zhihu.com/p/308281195)
+* [Windows下安装mmdetection填坑记录](https://blog.csdn.net/flying_ant2018/article/details/105069608?utm_medium=distribute.pc_relevant.none-task-blog-baidujs_title-4&spm=1001.2101.3001.4242)
 
 ## 常用執行指令
 ### 訓練
@@ -111,8 +126,9 @@ validation: &validate
 ```
 python demo.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml
 ```
-輸出`val_images`資料夾中的圖片預測結果
+輸出`val_images`資料夾中的圖片預測結果至`.csv`檔案
 ## Models
+此處下載<font color="#f00">預訓練的權重檔案`.pth`</font>  
 Download Trained models [Baidu Drive](https://pan.baidu.com/s/1vxcdpOswTK6MxJyPIJlBkA) (download code: p6u3), [Google Drive](https://drive.google.com/open?id=1T9n0HTP3X3Y_nJ0D1ekMhCQRHntORLJG).
 ```
   pre-trained-model-synthtext   -- used to finetune models, not for evaluation
@@ -121,11 +137,38 @@ Download Trained models [Baidu Drive](https://pan.baidu.com/s/1vxcdpOswTK6MxJyPI
   totaltext_resnet18
   totaltext_resnet50
 ```
+自行訓練的權重檔案將存放於
+`C:\Users\Host\Desktop\OCR\DB\workspace\SegDetectorModel-seg_detector\deformable_resnet50\L1BalanceCELoss\model`中的`final`檔案(沒有副檔名)
+>開始訓練前須先自行在`DB`資料夾中新增`workspace`資料夾 (Windows環境)
 
 ## Datasets
-The root of the dataset directory can be ```DB/datasets/```.
 
+DB預設路徑於`icdar2015`資料夾中
+>訓練集 4000張圖片  
+>>train_gts 個別標記座標  
+>>train_images 圖片檔  
+>>train_list.txt 所有訓練集圖片的座標清單  
+>>
+>驗證集 200張  
+>>test_gts   
+>>test_images  
+>>test_list.txt  
+>>
+>測試集 1000張 
+>>val_images
+>>
+>測試集(比賽排名用)
+>>待公布
+
+* 需自行在`DB`資料夾中新增`datasets`資料夾  
+The root of the dataset directory can be ```DB/datasets/```.  
+
+* 此處下載<font color="#f00">訓練集(4000張圖)的標記檔案`.txt`</font> 和<font color="#f00">驗證集(500張圖)的標記資料`.txt`與圖片檔`.jpg`</font>  
+測試集選用在`TD_TR`資料夾中`TD500`中的`test_images`中的200張圖片  
 Download the converted ground-truth and data list [Baidu Drive](https://pan.baidu.com/s/1BPYxcZnLXN87rQKmz9PFYA) (download code: mz0a), [Google Drive](https://drive.google.com/open?id=12ozVTiBIqK8rUFWLUrlquNfoQxL2kAl7). The images of each dataset can be obtained from their official website.
+
+* <font color="#f00">訓練集圖片</font>於此[下載](https://tbrain.trendmicro.com.tw/Competitions/Download/13?fileName=TrainDataset_0506.zip)
+* <font color="#f00">測試集圖片</font>於此[下載](https://tbrain.trendmicro.com.tw/Competitions/Download/13?fileName=PublicTestDataset.zip)
 
 ## Testing
 ### Prepar dataset
