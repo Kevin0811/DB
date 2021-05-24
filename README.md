@@ -58,7 +58,60 @@ Part of the code is inherited from [MegReader](https://github.com/Megvii-CSG/Meg
   python setup.py build_ext --inplace
 
 ```
+#### 於Windows執行 `python setup.py build_ext --inplace`
 
+mmdetection 執行前須先進行編譯  
+##### 常出現的錯誤
+* `assets\ops\dcn\src` 中的 `deform_conv_cuda.cpp`和`deform_pool_cuda.cpp`  
+將`AT_CHECK` 取代為 → `TORCH_CHECK`  
+
+* `assets\ops\dcn\src` 中的 `deform_conv_cuda_kernel.cu`和`deform_pool_cuda_kernel.cu`  
+將`floor` 取代為 → `floorf`  
+將`ceil` 取代為 → `ceilf`  
+將`round` 取代為 → `roundf`  
+
+
+
+## 常用執行指令
+### 訓練
+```bash
+python train.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml --num_gpus 1 --epochs 3 --num_workers 1 --batch_size 4
+```
+`.yaml`為必填參數，後面的 `num_gpus` `epoch` `num_workers` `batch_size`都已經在.yaml裡有預設值但此處能可再次自訂義覆寫  
+* `num_gpus` 欲使用的GPU編號，若只有一個GPU則設為0即可  
+* `epoch` 欲訓練的回合數  
+* `num_workers` 同時多少執行緒並行，只有一個GPU則設為1即可  
+* `batch_size` 單次投入的訓練資料數量  
+
+### 驗證
+```bash
+python eval.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml --box_thresh 0.5
+```
+範例中的`--resume` 非必填參數  
+`.yaml`為必填參數，其他可自定義的參數參考如下
+
+```yaml
+validation: &validate
+        class: ValidationSettings
+        data_loaders:
+            icdar2015: 
+                class: DataLoader
+                dataset: ^validate_data
+                batch_size: 1
+                num_workers: 1
+                collect_fn:
+                    class: ICDARCollectFN
+        visualize: false
+        interval: 4500
+        exempt: 1
+```
+
+
+### 示範
+```
+python demo.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml
+```
+輸出`val_images`資料夾中的圖片預測結果
 ## Models
 Download Trained models [Baidu Drive](https://pan.baidu.com/s/1vxcdpOswTK6MxJyPIJlBkA) (download code: p6u3), [Google Drive](https://drive.google.com/open?id=1T9n0HTP3X3Y_nJ0D1ekMhCQRHntORLJG).
 ```
