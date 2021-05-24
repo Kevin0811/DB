@@ -59,7 +59,7 @@ pip install gevent-websocket
 正確執行後會在`DB\assets\ops\dcn\build\lib.win-amd64-3.8`出現以下檔案
 ```
 buildt\lib.win-amd64-3.61\deform_cony_cuda.cp36-win_amd64.pyd
-build\lib.win-amd64-3.61\deform_pool_cuda.cp36-win_am
+buildt\lib.win-amd64-3.61\deform_pool_cuda.cp36-win_am
 ```
 
 ##### 常出現的錯誤
@@ -130,7 +130,7 @@ validation: &validate
 
 ### 示範
 ```
-python demo.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml
+python demo2csv.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml
 ```
 輸出`val_images`資料夾中的圖片預測結果至`.csv`檔案
 ## Models
