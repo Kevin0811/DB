@@ -35,10 +35,10 @@ __device__ scalar_t bilinear_interp(
     const int width,
     const int height)
 {
-  int x1 = floor(x);
-  int x2 = ceil(x);
-  int y1 = floor(y);
-  int y2 = ceil(y);
+  int x1 = floorf(x);
+  int x2 = ceilf(x);
+  int y1 = floorf(y);
+  int y2 = ceilf(y);
   scalar_t dist_x = (scalar_t)(x - x1);
   scalar_t dist_y = (scalar_t)(y - y1);
   scalar_t value11 = data[y1 * width + x1];
@@ -80,10 +80,10 @@ __global__ void DeformablePSROIPoolForwardKernel(
     // [start, end) interval for spatial sampling
     const scalar_t *offset_bottom_rois = bottom_rois + n * 5;
     int roi_batch_ind = offset_bottom_rois[0];
-    scalar_t roi_start_w = (scalar_t)(round(offset_bottom_rois[1])) * spatial_scale - 0.5;
-    scalar_t roi_start_h = (scalar_t)(round(offset_bottom_rois[2])) * spatial_scale - 0.5;
-    scalar_t roi_end_w = (scalar_t)(round(offset_bottom_rois[3]) + 1.) * spatial_scale - 0.5;
-    scalar_t roi_end_h = (scalar_t)(round(offset_bottom_rois[4]) + 1.) * spatial_scale - 0.5;
+    scalar_t roi_start_w = (scalar_t)(roundf(offset_bottom_rois[1])) * spatial_scale - 0.5;
+    scalar_t roi_start_h = (scalar_t)(roundf(offset_bottom_rois[2])) * spatial_scale - 0.5;
+    scalar_t roi_end_w = (scalar_t)(roundf(offset_bottom_rois[3]) + 1.) * spatial_scale - 0.5;
+    scalar_t roi_end_h = (scalar_t)(roundf(offset_bottom_rois[4]) + 1.) * spatial_scale - 0.5;
 
     // Force too small ROIs to be 1x1
     scalar_t roi_width = max(roi_end_w - roi_start_w, 0.1); //avoid 0
@@ -96,8 +96,8 @@ __global__ void DeformablePSROIPoolForwardKernel(
     scalar_t sub_bin_size_h = bin_size_h / (scalar_t)(sample_per_part);
     scalar_t sub_bin_size_w = bin_size_w / (scalar_t)(sample_per_part);
 
-    int part_h = floor((scalar_t)(ph) / pooled_height * part_size);
-    int part_w = floor((scalar_t)(pw) / pooled_width * part_size);
+    int part_h = floorf((scalar_t)(ph) / pooled_height * part_size);
+    int part_w = floorf((scalar_t)(pw) / pooled_width * part_size);
     int class_id = ctop / channels_each_class;
     scalar_t trans_x = no_trans ? (scalar_t)(0) : bottom_trans[(((n * num_classes + class_id) * 2) * part_size + part_h) * part_size + part_w] * (scalar_t)trans_std;
     scalar_t trans_y = no_trans ? (scalar_t)(0) : bottom_trans[(((n * num_classes + class_id) * 2 + 1) * part_size + part_h) * part_size + part_w] * (scalar_t)trans_std;
@@ -109,8 +109,8 @@ __global__ void DeformablePSROIPoolForwardKernel(
 
     scalar_t sum = 0;
     int count = 0;
-    int gw = floor((scalar_t)(pw)*group_size / pooled_width);
-    int gh = floor((scalar_t)(ph)*group_size / pooled_height);
+    int gw = floorf((scalar_t)(pw)*group_size / pooled_width);
+    int gh = floorf((scalar_t)(ph)*group_size / pooled_height);
     gw = min(max(gw, 0), group_size - 1);
     gh = min(max(gh, 0), group_size - 1);
 
@@ -173,10 +173,10 @@ __global__ void DeformablePSROIPoolBackwardAccKernel(
     // [start, end) interval for spatial sampling
     const scalar_t *offset_bottom_rois = bottom_rois + n * 5;
     int roi_batch_ind = offset_bottom_rois[0];
-    scalar_t roi_start_w = (scalar_t)(round(offset_bottom_rois[1])) * spatial_scale - 0.5;
-    scalar_t roi_start_h = (scalar_t)(round(offset_bottom_rois[2])) * spatial_scale - 0.5;
-    scalar_t roi_end_w = (scalar_t)(round(offset_bottom_rois[3]) + 1.) * spatial_scale - 0.5;
-    scalar_t roi_end_h = (scalar_t)(round(offset_bottom_rois[4]) + 1.) * spatial_scale - 0.5;
+    scalar_t roi_start_w = (scalar_t)(roundf(offset_bottom_rois[1])) * spatial_scale - 0.5;
+    scalar_t roi_start_h = (scalar_t)(roundf(offset_bottom_rois[2])) * spatial_scale - 0.5;
+    scalar_t roi_end_w = (scalar_t)(roundf(offset_bottom_rois[3]) + 1.) * spatial_scale - 0.5;
+    scalar_t roi_end_h = (scalar_t)(roundf(offset_bottom_rois[4]) + 1.) * spatial_scale - 0.5;
 
     // Force too small ROIs to be 1x1
     scalar_t roi_width = max(roi_end_w - roi_start_w, 0.1); //avoid 0
@@ -189,8 +189,8 @@ __global__ void DeformablePSROIPoolBackwardAccKernel(
     scalar_t sub_bin_size_h = bin_size_h / (scalar_t)(sample_per_part);
     scalar_t sub_bin_size_w = bin_size_w / (scalar_t)(sample_per_part);
 
-    int part_h = floor((scalar_t)(ph) / pooled_height * part_size);
-    int part_w = floor((scalar_t)(pw) / pooled_width * part_size);
+    int part_h = floorf((scalar_t)(ph) / pooled_height * part_size);
+    int part_w = floorf((scalar_t)(pw) / pooled_width * part_size);
     int class_id = ctop / channels_each_class;
     scalar_t trans_x = no_trans ? (scalar_t)(0) : bottom_trans[(((n * num_classes + class_id) * 2) * part_size + part_h) * part_size + part_w] * (scalar_t)trans_std;
     scalar_t trans_y = no_trans ? (scalar_t)(0) : bottom_trans[(((n * num_classes + class_id) * 2 + 1) * part_size + part_h) * part_size + part_w] * (scalar_t)trans_std;
@@ -207,8 +207,8 @@ __global__ void DeformablePSROIPoolBackwardAccKernel(
     scalar_t diff_val = top_diff[index] / top_count[index];
     const scalar_t *offset_bottom_data = bottom_data + roi_batch_ind * channels * height * width;
     scalar_t *offset_bottom_data_diff = bottom_data_diff + roi_batch_ind * channels * height * width;
-    int gw = floor((scalar_t)(pw)*group_size / pooled_width);
-    int gh = floor((scalar_t)(ph)*group_size / pooled_height);
+    int gw = floorf((scalar_t)(pw)*group_size / pooled_width);
+    int gh = floorf((scalar_t)(ph)*group_size / pooled_height);
     gw = min(max(gw, 0), group_size - 1);
     gh = min(max(gh, 0), group_size - 1);
 
@@ -227,10 +227,10 @@ __global__ void DeformablePSROIPoolBackwardAccKernel(
         h = min(max(h, 0.), height - 1.);
         int c = (ctop * group_size + gh) * group_size + gw;
         // backward on feature
-        int x0 = floor(w);
-        int x1 = ceil(w);
-        int y0 = floor(h);
-        int y1 = ceil(h);
+        int x0 = floorf(w);
+        int x1 = ceilf(w);
+        int y0 = floorf(h);
+        int y1 = ceilf(h);
         scalar_t dist_x = w - x0, dist_y = h - y0;
         scalar_t q00 = (1 - dist_x) * (1 - dist_y);
         scalar_t q01 = (1 - dist_x) * dist_y;

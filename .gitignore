@@ -6,6 +6,8 @@ workspace
 *.swp
 *.swo
 *.lock
+*.csv
+*.pth
 
 # C extensions
 *.so

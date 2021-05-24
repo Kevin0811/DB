@@ -43,9 +43,9 @@ class ImageDataset(data.Dataset, Configurable):
                 image_path=[self.data_dir[i]+'/test_images/'+timg.strip() for timg in image_list]
                 print(self.data_dir[i])
                 if 'TD500' in self.data_list[i] or 'total_text' in self.data_list[i]:
-                    gt_path=[self.data_dir[i]+'/test_gts/'+timg.strip()+'.txt' for timg in image_list]
+                    gt_path=[self.data_dir[i]+'test_gts/'+timg.strip()+'.txt' for timg in image_list]
                 else:
-                    gt_path=[self.data_dir[i]+'/test_gts/'+'gt_'+timg.strip().split('.')[0]+'.txt' for timg in image_list]
+                    gt_path=[self.data_dir[i]+'test_gts/'+timg.strip().split('.')[0]+'.jpg.txt' for timg in image_list]
             self.image_paths += image_path
             self.gt_paths += gt_path
         self.num_samples = len(self.image_paths)
@@ -81,6 +81,7 @@ class ImageDataset(data.Dataset, Configurable):
             index = index % self.num_samples
         data = {}
         image_path = self.image_paths[index]
+        #print(image_path)
         img = cv2.imread(image_path, cv2.IMREAD_COLOR).astype('float32')
         if self.is_training:
             data['filename'] = image_path

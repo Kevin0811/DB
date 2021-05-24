@@ -1,5 +1,6 @@
 #!python3
 import argparse
+import csv
 import os
 import torch
 import cv2
@@ -12,7 +13,7 @@ def main():
     parser = argparse.ArgumentParser(description='Text Recognition Training')
     parser.add_argument('exp', type=str)
     parser.add_argument('--resume', type=str, help='Resume from checkpoint')
-    parser.add_argument('--image_path', type=str, help='image path')
+    parser.add_argument('--image_path', type=str,default='./datasets/icdar2015/val_images', help='image path')
     parser.add_argument('--result_dir', type=str, default='./demo_results/', help='path to save results')
     parser.add_argument('--data', type=str,
                         help='The name of dataloader which will be evaluated on.')
@@ -39,9 +40,24 @@ def main():
     experiment_args = conf.compile(conf.load(args['exp']))['Experiment']
     experiment_args.update(cmd=args)
     experiment = Configurable.construct_class_from_config(experiment_args)
+    
+    image_paths = get_images(args['image_path'])
 
-    Demo(experiment, experiment_args, cmd=args).inference(args['image_path'], args['visualize'])
+    # Start demo here
+    Demo(experiment, experiment_args, cmd=args).inference(image_paths, args['visualize'])
 
+
+# Get all image path to img_files array
+def get_images(in_path):
+    img_files = []
+    for (dirpath, dirnames, filenames) in os.walk(in_path):
+        for file in filenames:
+            filename, ext = os.path.splitext(file)
+            ext = str.lower(ext)
+            if ext == '.jpg' or ext == '.jpeg' or ext == '.gif' or ext == '.png' or ext == '.pgm':
+                img_files.append(os.path.join(dirpath, file))
+
+    return img_files
 
 class Demo:
     def __init__(self, experiment, args, cmd=dict()):
@@ -101,8 +117,11 @@ class Demo:
         img = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0)
         return img, original_shape
         
-    def format_output(self, batch, output):
+    def format_output(self, batch, output, id):
         batch_boxes, batch_scores = output
+        output_data = []
+
+
         for index in range(batch['image'].size(0)):
             original_shape = batch['shape'][index]
             filename = batch['filename'][index]
@@ -111,6 +130,7 @@ class Demo:
             boxes = batch_boxes[index]
             scores = batch_scores[index]
             if self.args['polygon']:
+                print("HELLO")
                 with open(result_file_path, 'wt') as res:
                     for i, box in enumerate(boxes):
                         box = np.array(box).reshape(-1).tolist()
@@ -118,36 +138,56 @@ class Demo:
                         score = scores[i]
                         res.write(result + ',' + str(score) + "\n")
             else:
-                with open(result_file_path, 'wt') as res:
-                    for i in range(boxes.shape[0]):
-                        score = scores[i]
-                        if score < self.args['box_thresh']:
-                            continue
-                        box = boxes[i,:,:].reshape(-1).tolist()
-                        result = ",".join([str(int(x)) for x in box])
-                        res.write(result + ',' + str(score) + "\n")
+                for i in range(boxes.shape[0]):
+                    # if got higher confident score
+                    score = scores[i]
+                    if score < self.args['box_thresh']:
+                        continue
+                    box = boxes[i,:,:].reshape(-1).tolist()
+                    box.insert(0, id)
+                    box.append(score)
+                    result = ",".join([str(int(x)) for x in box])
+                    #res.write(result + ',' + str(score) + "\n")
+                    output_data.append(box)
+            
+        with open('test.csv','a+',newline='') as csv_file:
+            csv_write = csv.writer(csv_file)
+            #csv_write.writerow(output_data)
+            csv_write.writerows(output_data)
+
+        csv_file.close()
         
     def inference(self, image_path, visualize=False):
+
         self.init_torch_tensor()
         model = self.init_model()
         self.resume(model, self.model_path)
         all_matircs = {}
         model.eval()
         batch = dict()
-        batch['filename'] = [image_path]
-        img, original_shape = self.load_image(image_path)
-        batch['shape'] = [original_shape]
-        with torch.no_grad():
-            batch['image'] = img
-            pred = model.forward(batch, training=False)
-            output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
-            if not os.path.isdir(self.args['result_dir']):
-                os.mkdir(self.args['result_dir'])
-            self.format_output(batch, output)
+        id = 1
 
-            if visualize and self.structure.visualizer:
-                vis_image = self.structure.visualizer.demo_visualize(image_path, output)
-                cv2.imwrite(os.path.join(self.args['result_dir'], image_path.split('/')[-1].split('.')[0]+'.jpg'), vis_image)
+        for img_sample in image_path:
+            batch['filename'] = [img_sample]
+            img, original_shape = self.load_image(img_sample)
+            batch['shape'] = [original_shape]
+            with torch.no_grad():
+                batch['image'] = img
+                # model output
+                pred = model.forward(batch, training=False)
+                #print(pred)
+                #print("HELLO")
+                output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
+
+                #if not os.path.isdir(self.args['result_dir']):
+                    #os.mkdir(self.args['result_dir'])
+
+                self.format_output(batch, output, id)
+                id += 1
+                #if visualize and self.structure.visualizer:
+                    #vis_image = self.structure.visualizer.demo_visualize(img_sample, output)
+                    #cv2.imwrite(os.path.join(self.args['result_dir'], img_sample.split('/')[-1].split('.')[0]+'.jpg'), vis_image)
+
 
 if __name__ == '__main__':
     main()
