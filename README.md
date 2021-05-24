@@ -47,6 +47,12 @@ Part of the code is inherited from [MegReader](https://github.com/Megvii-CSG/Meg
   python setup.py build_ext --inplace
 
 ```
+#### 安裝需求套件
+```bash
+conda install shapely
+pip install gevent-websocket
+```
+
 #### 於Windows執行 `python setup.py build_ext --inplace`
 
 以上指令用於 mmdetection 執行前的編譯  
