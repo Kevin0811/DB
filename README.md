@@ -1,12 +1,18 @@
+---
+tags: Project, Programming
+---
+
 ## News
 * DB is included in [WeChat OCR engine](https://mp.weixin.qq.com/s/6IGXof3KWVnN8z1i2YOqJA)
 * DB is included in [OpenCV](https://github.com/opencv/opencv/blob/master/doc/tutorials/dnn/dnn_text_spotting/dnn_text_spotting.markdown)
 * DB is included in [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
 
-# Introduction
+# Introduction DB
 This is a PyToch implementation of "Real-time Scene Text Detection with Differentiable Binarization". [This paper](https://arxiv.org/abs/1911.08947) presents a real-time arbitrary-shape scene text detector, achieving the state-of-the-art performance on standard benchmarks.
 
 Part of the code is inherited from [MegReader](https://github.com/Megvii-CSG/MegReader).
+
+Heatmap-based Object Detection
 
 ## Installation
 
@@ -279,6 +285,104 @@ Please cite the related works in your publications if it helps your research:
       year={2020}
     }
 
+## File
 
+* backbone
+  - MobileNet v3
+  - ResNet
+    +  resnet 18
+    +  resnet 34
+    +  resnet 50
+    +  resnet 101
+    +  resnet 152
+    +  deformable_resnet18 (deformable 可變形)
+    +  deformable_resnet50 (Best)
+* concern
+* data
+* decoders
+  - SegDetectorLossBuilder (可選 Loss function)
+    + **DiceLoss**  
+    DiceLoss on `binary`.  
+    For SegDetector without adaptive module.
+    + **BalanceBCELoss**  
+    DiceLoss on `binary`.
+    + **AdaptiveDiceLoss**  
+    Integration of DiceLoss on both `binary` and `thresh`
+    + **AdaptiveInstanceDiceLoss**  
+    InstanceDiceLoss on `binary` and `thresh_bianry`.
+    + **L1DiceLoss**  
+    L1Loss on `thresh`,  
+    DiceLoss on `thresh_binary` and `binary`.
+    + **FullL1DiceLoss**  
+    L1loss on `thresh`,   
+    DiceLoss on `thresh_binary` and `binary`.
+    + **L1BalanceCELoss**  
+    Balanced CrossEntropy Loss on `binary`,  
+    MaskL1Loss on `thresh`,  
+    DiceLoss on `thresh_binary`.  
+    + **L1BCEMiningLoss**  
+    Basicly the same with L1BalanceCELoss, where the bce loss map is used as attention weigts for DiceLoss
+    + **L1LeakyDiceLoss**  
+    LeakyDiceLoss on `binary`,  
+    MaskL1Loss on `thresh`,  
+    DiceLoss on `thresh_binary`.  
     
+可於`yaml`中`model_arg`的`loss_class`設定
+```yaml
+model_args:
+    backbone: deformable_resnet50
+    decoder: SegDetector
+    decoder_args: 
+        adaptive: True
+        in_channels: [256, 512, 1024, 2048]
+        k: 50
+    loss_class: L1BalanceCELoss
+```
 
+* experiments (自訂參數)
+  - base.yaml 通用
+  - seg_dectector 細節自定義
+* structure
+  - measurers
+  - represrnters
+    + seg_dectector_representer → boxes_from_bitmap() 將熱力圖轉為框框
+  - visualizer
+  - model (Backbone + decoder)
+* training
+  - checkpoint
+  - learning rate
+  - model saver
+  - optimizer(scheduler)
+* enter
+  - experment
+  - trans (txt to json)
+  - train
+  - trainer
+    + train_step 訓練與更新權重
+  - eval
+  - demo
+  - demo2csv (輸出答案並儲存為.csv)
+
+
+### batch (model input)
+
+```python
+pred = model.forward(batch, training=False)
+```
+
+### pred (model output) 
+[1, H, W] 值介於0~1之間
+```python
+output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon'])
+```
+
+* batch: a dict produced by dataloaders.
+  - **image** tensor of shape (N, C, H, W).
+  - **polygons** tensor of shape (N, K, 4, 2), the polygons of objective regions.
+  - **ignore_tags** tensor of shape (N, K), indicates whether a region is ignorable or not.
+  - **shape** the original shape of images.
+  - **filename** the original filenames of images.
+* pred: model output (模型輸出的預測值包含三樣，其中binary必備，其他兩項可選)
+  - **binary** text region segmentation map, with shape (N, 1, H, W)
+  - **thresh** [if exists] thresh hold prediction with shape (N, 1, H, W)
+  - **thresh_binary** [if exists] binarized with threshhold, (N, 1, H, W)
