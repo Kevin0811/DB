@@ -44,7 +44,7 @@ def main():
     parser.add_argument('--no-verbose', action='store_true',
                         help='show verbose info')
     parser.add_argument('--visualize', action='store_true',
-                        help='visualize maps in tensorboard')
+                        help='visualize maps in tensorboard', default=True)
     parser.add_argument('--resize', action='store_true',
                         help='resize')
     parser.add_argument('--polygon', action='store_true',
@@ -174,6 +174,7 @@ class Eval:
                         time_cost = self.report_speed(model, batch, times=50)
                         continue
                     pred = model.forward(batch, training=False)
+                    #print(pred)
                     output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
                     if not os.path.isdir(self.args['result_dir']):
                         os.mkdir(self.args['result_dir'])

@@ -16,7 +16,7 @@ define:
                     adaptive: True
                     in_channels: [256, 512, 1024, 2048]
                     k: 50
-                loss_class: L1BalanceCELoss
+                loss_class: L1BCEMiningLoss
 
         representer:
             class: SegDetectorRepresenter
@@ -40,18 +40,18 @@ define:
         model_saver: 
             class: ModelSaver
             dir_path: model
-            save_interval: 3000
+            save_interval: 5000
             signal_path: save
         scheduler: 
             class: OptimizerScheduler
             optimizer: "SGD"
             optimizer_args:
-                lr: 0.007
+                lr: 0.0025
                 momentum: 0.9
-                weight_decay: 0.0001
+                weight_decay: 0.0005
             learning_rate:  
                 class: DecayLearningRate
-                epochs: 1200
+                epochs: 1000
         epochs: 1200
 
     validation: &validate

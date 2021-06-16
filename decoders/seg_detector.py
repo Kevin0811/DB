@@ -141,8 +141,7 @@ class SegDetector(nn.Module):
         if self.adaptive and self.training:
             if self.serial:
                 fuse = torch.cat(
-                        (fuse, nn.functional.interpolate(
-                            binary, fuse.shape[2:])), 1)
+                        (fuse, nn.functional.interpolate(binary, fuse.shape[2:])), 1)
             thresh = self.thresh(fuse)
             thresh_binary = self.step_function(binary, thresh)
             result.update(thresh=thresh, thresh_binary=thresh_binary)

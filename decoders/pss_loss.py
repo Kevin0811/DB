@@ -77,6 +77,7 @@ class PSS_Loss(nn.Module):
         return loss
 
     def bce_loss(self, pred, gt, m):
+        print(m)
         l = F.binary_cross_entropy(pred, gt, weight=m, reduction='sum')
         loss = l/(m.sum()+self.eps)
         return loss

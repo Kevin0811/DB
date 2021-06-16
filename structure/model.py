@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torchsummary import summary
+
 import backbones
 import decoders
 
@@ -12,15 +14,23 @@ class BasicModel(nn.Module):
     def __init__(self, args):
         nn.Module.__init__(self)
 
-        self.backbone = getattr(backbones, args['backbone'])(**args.get('backbone_args', {}))
-        self.decoder = getattr(decoders, args['decoder'])(**args.get('decoder_args', {}))
+        #self.backbone = getattr(backbones, args['backbone'])(**args.get('backbone_args', {}))
+        #self.decoder = getattr(decoders, args['decoder'])(**args.get('decoder_args', {}))
+
+        self.transpose = backbones.get_pose_net(50, True) # 50: ResNet50
+
+        #print(self.transpose)
+        summary(self.transpose, (3,480,480), batch_size=-1, device="cpu") #image size
 
     def forward(self, data, *args, **kwargs):
-        return self.decoder(self.backbone(data), *args, **kwargs)
+        
+        #return self.decoder(self.backbone(data), *args, **kwargs)
+        return self.transpose(data)
 
 
 def parallelize(model, distributed, local_rank):
     if distributed:
+        # data for multi GPU
         return nn.parallel.DistributedDataParallel(
             model,
             device_ids=[local_rank],
@@ -37,6 +47,7 @@ class SegDetectorModel(nn.Module):
         self.model = BasicModel(args)
         # for loading models
         self.model = parallelize(self.model, distributed, local_rank)
+        # set Loss function (criterion)
         self.criterion = SegDetectorLossBuilder(
             args['loss_class'], *args.get('loss_args', []), **args.get('loss_kwargs', {})).build()
         self.criterion = parallelize(self.criterion, distributed, local_rank)
@@ -60,6 +71,7 @@ class SegDetectorModel(nn.Module):
                 if value is not None:
                     if hasattr(value, 'to'):
                         batch[key] = value.to(self.device)
+            #print(pred)
             loss_with_metrics = self.criterion(pred, batch)
             loss, metrics = loss_with_metrics
             return loss, pred, metrics

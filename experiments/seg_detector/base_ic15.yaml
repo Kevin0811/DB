@@ -18,7 +18,8 @@ define:
           only_resize: False
           keep_ratio: False
         - class: RandomCropData
-          size: [640, 640]
+          #size: [640, 640]
+          size: [480, 480] # image size
           max_tries: 10
         - class: MakeICDARData
         - class: MakeSegDetectionData
@@ -36,8 +37,9 @@ define:
     processes:
         - class: AugmentDetectionData
           augmenter_args:
-              - ['Resize', {'width': 1280, 'height': 736}]
+              # - ['Resize', {'width': 1280, 'height': 736}]
               # - ['Resize', {'width': 2048, 'height': 1152}]
+              - ['Resize', {'width': 480, 'height': 480}] # image size
           only_resize: True
           keep_ratio: False
         - class: MakeICDARData

@@ -6,6 +6,7 @@ from tqdm import tqdm
 from experiment import Experiment
 from data.data_loader import DistributedSampler
 
+from tensorboardX import SummaryWriter 
 
 class Trainer:
     def __init__(self, experiment: Experiment):
@@ -15,6 +16,8 @@ class Trainer:
         self.structure = experiment.structure
         self.logger = experiment.logger
         self.model_saver = experiment.train.model_saver
+
+        self.writer = SummaryWriter('./log/' + self.structure.builder.model_args['loss_class']+"_480") #image size
 
         # FIXME: Hack the save model path into logger path
         self.model_saver.dir_path = self.logger.save_dir(
@@ -47,9 +50,12 @@ class Trainer:
         self.logger.args(self.experiment)
         model = self.init_model()
         train_data_loader = self.experiment.train.data_loader
+
+        # Validation
         if self.experiment.validation:
             validation_loaders = self.experiment.validation.data_loaders
 
+        # Load chechpoint
         self.steps = 0
         if self.experiment.train.checkpoint:
             self.experiment.train.checkpoint.restore_model(
@@ -107,6 +113,7 @@ class Trainer:
         optimizer.zero_grad()
 
         results = model.forward(batch, training=True)
+        #print(results.size())
         if len(results) == 2:
             l, pred = results
             metrics = {}
@@ -121,8 +128,15 @@ class Trainer:
                 line.append('loss_{0}:{1:.4f}'.format(key, l_val.mean()))
         else:
             loss = l.mean()
+
+        # Update weight BP
         loss.backward()
         optimizer.step()
+
+        for name, metric in metrics.items():
+            self.writer.add_scalar(name, metric.mean(), step)
+
+        self.writer.add_scalar('loss', l.mean(), step)
 
         if step % self.experiment.logger.log_interval == 0:
             if isinstance(l, dict):

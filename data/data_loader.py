@@ -18,8 +18,8 @@ def default_worker_init_fn(worker_id):
 
 class DataLoader(Configurable, torch.utils.data.DataLoader):
     dataset = State()
-    batch_size = State(default=256)
-    num_workers = State(default=10)
+    batch_size = State(default=1)
+    num_workers = State(default=1)
     is_train = State(default=True)
     collect_fn = State(default=None)
     drop_last = State(default=True)
@@ -179,8 +179,8 @@ class InfiniteOrderedSampler(Sampler):
 
 class InfiniteDataLoader(Configurable, torch.utils.data.DataLoader):
     dataset = State()
-    batch_size = State(default=256)
-    num_workers = State(default=10)
+    batch_size = State(default=1)
+    num_workers = State(default=1)
     limit_size = State(default=2 ** 31)
 
     def __init__(self, **kwargs):

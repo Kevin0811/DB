@@ -38,10 +38,13 @@ class SegDetectorRepresenter(Configurable):
             thresh_binary: [if exists] binarized with threshhold, (N, 1, H, W)
         '''
         images = batch['image']
+        # check format (dict to list)
         if isinstance(_pred, dict):
             pred = _pred[self.dest]
         else:
             pred = _pred
+            
+        # binarize(): thresh filter
         segmentation = self.binarize(pred)
         boxes_batch = []
         scores_batch = []
@@ -125,9 +128,24 @@ class SegDetectorRepresenter(Configurable):
         bitmap = _bitmap.cpu().numpy()[0]  # The first channel
         pred = pred.cpu().detach().numpy()[0]
         height, width = bitmap.shape
+        #blurred = cv2.GaussianBlur((pred*255).astype(np.uint8), (5, 5), 0)
+        #cv2.Canny(gray, low_threshold, high_threshold).
+        #canny = cv2.Canny(blurred, 70, 80)
+        #cv2.imshow('My Image', canny)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+
         contours, _ = cv2.findContours(
             (bitmap*255).astype(np.uint8),
             cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        #print(contours)
+        '''
+        img_color=cv2.cvtColor((bitmap*255).astype(np.uint8),cv2.COLOR_GRAY2BGR)
+        img=cv2.drawContours(img_color,contours,-1,(0,255,0),2)  # img为三通道才能显示轮廓
+        cv2.imshow('drawimg',img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        '''
         num_contours = min(len(contours), self.max_candidates)
         boxes = np.zeros((num_contours, 4, 2), dtype=np.int16)
         scores = np.zeros((num_contours,), dtype=np.float32)

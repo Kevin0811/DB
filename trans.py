@@ -1,8 +1,9 @@
-
 import os
 import json
 import argparse
 from PIL import Image
+
+# lable.txt to json
 
 def read_jsonFile(input_json_dir,fname):
 	info_list = []
