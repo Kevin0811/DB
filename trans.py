@@ -3,19 +3,19 @@ import json
 import argparse
 from PIL import Image
 
-# lable.txt to json
+# lable json to txt
 
 def read_jsonFile(input_json_dir,fname):
 	info_list = []
 	path = os.path.join(input_json_dir,fname)
 	with open(path, 'r',encoding="utf-8") as f:
 		json_i = json.load(f)
-	shapes = json_i['shapes']
+	shapes = json_i['chars']
 	for i in range(len(shapes)):
 		temp = {}
-		temp['group_id']=shapes[i]['group_id']
+		#temp['group_id']=shapes[i]['group_id']
 		temp['points']=shapes[i]['points']
-		temp['label']=shapes[i]['label']
+		#temp['label']=shapes[i]['label']
 		info_list.append(temp)
 
 	return info_list
@@ -24,11 +24,12 @@ def getBboxInfo(i_list):
 	# 0:中文字串 1:中文單字 2:英數字串 3:中英數字串 4:中文單字字串 5:其他 255:don't care
 	allBbox = []
 	for info in i_list:
-		x1,y1 = round(info['points'][0][0]),round(info['points'][0][1])
-		x2,y2 = round(info['points'][1][0]),round(info['points'][1][1])
-		x3,y3 = round(info['points'][2][0]),round(info['points'][2][1])
-		x4,y4 = round(info['points'][3][0]),round(info['points'][3][1])
-		allBbox.append((x1,y1,x2,y2,x3,y3,x4,y4,info['label'],info['group_id']))
+		x1,y1 = round(info['points'][0]),round(info['points'][1])
+		x2,y2 = round(info['points'][2]),round(info['points'][3])
+		x3,y3 = round(info['points'][4]),round(info['points'][5])
+		x4,y4 = round(info['points'][6]),round(info['points'][7])
+		#allBbox.append((x1,y1,x2,y2,x3,y3,x4,y4,info['label'],info['group_id']))
+		allBbox.append((x1,y1,x2,y2,x3,y3,x4,y4,'0'))
 		
 	return allBbox
 

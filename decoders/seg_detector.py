@@ -43,6 +43,7 @@ class SegDetector(nn.Module):
         self.out2 = nn.Conv2d(
             inner_channels, inner_channels//4, 3, padding=1, bias=bias)
 
+        # Binarize
         self.binarize = nn.Sequential(
             nn.Conv2d(inner_channels, inner_channels //
                       4, 3, padding=1, bias=bias),
@@ -83,6 +84,7 @@ class SegDetector(nn.Module):
         in_channels = inner_channels
         if serial:
             in_channels += 1
+        # Thresh
         self.thresh = nn.Sequential(
             nn.Conv2d(in_channels, inner_channels //
                       4, 3, padding=1, bias=bias),
@@ -134,10 +136,16 @@ class SegDetector(nn.Module):
         # this is the pred module, not binarization module; 
         # We do not correct the name due to the trained model.
         binary = self.binarize(fuse)
+
+        '''
         if self.training:
             result = OrderedDict(binary=binary)
         else:
             return binary
+        '''
+        result = OrderedDict(binary=binary)
+
+        #if self.adaptive and self.training:
         if self.adaptive and self.training:
             if self.serial:
                 fuse = torch.cat(

@@ -20,11 +20,11 @@ def main():
     parser.add_argument('--result_dir', type=str, default='./demo_results/', help='path to save results')
     parser.add_argument('--data', type=str,
                         help='The name of dataloader which will be evaluated on.')
-    parser.add_argument('--image_short_side', type=int, default=320,
+    parser.add_argument('--image_short_side', type=int, default=640,
                         help='The threshold to replace it in the representers')
     parser.add_argument('--thresh', type=float,
                         help='The threshold to replace it in the representers')
-    parser.add_argument('--box_thresh', type=float, default=0.45,
+    parser.add_argument('--box_thresh', type=float, default=0.35,
                         help='The threshold to replace it in the representers')
     parser.add_argument('--visualize', action='store_true',
                         help='visualize maps in tensorboard', default=True)
@@ -78,6 +78,12 @@ class Demo:
         self.experiment = experiment
         experiment.load('evaluation', **args)
         self.args = cmd
+
+        self.exp_args = args
+        self.backbone_type = self.exp_args['structure']['builder']['model_args']['backbone']
+        self.height = self.exp_args['structure']['image_size'][0]
+        self.width = self.exp_args['structure']['image_size'][1]
+
         self.logger = experiment.logger
         model_saver = experiment.train.model_saver
         self.structure = experiment.structure
@@ -118,8 +124,15 @@ class Demo:
         else:
             new_width = self.args['image_short_side']
             new_height = int(math.ceil(new_width / width * height / 32) * 32)
-        #resized_img = cv2.resize(img, (new_width, new_height))
-        resized_img = cv2.resize(img, (480, 480)) # image size
+            
+        # image size
+        if self.backbone_type == 'DETR':
+            resized_img = cv2.resize(img, (self.height, self.width))
+        else:
+            resized_img = cv2.resize(img, (new_width, new_height))
+            self.height = new_height
+            self.width = new_width
+
         return resized_img
         
     def load_image(self, image_path):
@@ -182,8 +195,8 @@ class Demo:
         model.eval()
         batch = dict()
         id = 1
-        height, width = [480, 480] # image size
-        print_Heatmap = False
+        #height, width = [448, 320] # image size
+        print_Heatmap = True
 
         for img_sample in image_path:
             batch['filename'] = [img_sample]
@@ -196,8 +209,8 @@ class Demo:
                 #print(img.size())
 
                 # Model Output
-                pred = model.forward(batch, training=False)
-                #print(pred) #[1, 1, 736, 992]
+                pred = model.forward(batch, training=False, backbone_type = self.backbone_type)
+                #print(pred.size()) #[1, 1, 736, 992]
 
                 #resized_pred = cv2.resize((pred_array*255).astype(int).astype('float32'), (height, width), interpolation=cv2.INTER_AREA)
                 
@@ -210,9 +223,9 @@ class Demo:
 
                     fig, (ax1, ax2, ax3) = plt.subplots(1,3)
                 
-                    sns.heatmap(data=pred_binary.reshape((height, width)),square=True, ax=ax1) 
-                    sns.heatmap(data=pred_thresh.reshape((height, width)),square=True, ax=ax2)
-                    sns.heatmap(data=pred_thresh_binary.reshape((height, width)),square=True, ax=ax3) 
+                    sns.heatmap(data=pred_binary.reshape((self.height, self.width)),square=True, ax=ax1) 
+                    sns.heatmap(data=pred_thresh.reshape((self.height, self.width)),square=True, ax=ax2)
+                    sns.heatmap(data=pred_thresh_binary.reshape((self.height, self.width)),square=True, ax=ax3) 
                     #plt.close('all')
                     #print(-img[0].permute(1,2,0).detach().cpu().numpy())
                     #plt.imshow(-img[0].permute(1,2,0).detach().cpu().numpy())
@@ -220,7 +233,7 @@ class Demo:
                     
                 
                 # binary: text region segmentation map, with shape (N, 1, H, W)
-                output = self.structure.representer.represent(batch, pred['thresh_binary'], is_output_polygon=self.args['polygon']) 
+                output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
 
                 #if not os.path.isdir(self.args['result_dir']):
                     #os.mkdir(self.args['result_dir'])

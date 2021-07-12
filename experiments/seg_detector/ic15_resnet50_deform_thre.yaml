@@ -5,12 +5,14 @@ define:
   - name: 'Experiment'
     class: Experiment
     structure: 
+        image_size: [480, 480]
         class: Structure
         builder: 
             class: Builder
             model: SegDetectorModel
             model_args:
-                backbone: deformable_resnet50
+                #backbone: deformable_resnet50
+                backbone: DETR
                 decoder: SegDetector
                 decoder_args: 
                     adaptive: True
@@ -36,7 +38,7 @@ define:
             class: Checkpoint
             start_epoch: 0
             start_iter: 0
-            resume: null
+            resume: 'workspace\SegDetectorModel-seg_detector\DETR\L1BCEMiningLoss\model\final'
         model_saver: 
             class: ModelSaver
             dir_path: model
@@ -72,6 +74,6 @@ define:
         class: Logger
         verbose: true
         level: info
-        log_interval: 450
+        log_interval: 250
 
     evaluation: *validate

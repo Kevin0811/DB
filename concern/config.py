@@ -11,7 +11,11 @@ class Config(object):
 
     def load(self, conf):
         conf = anyconfig.load(conf)
+        #   conf1["a"] => 1
+        #   conf1["b"]["b1"] => "xyz"
         return munch.munchify(conf)
+            #   conf1.a
+            #   conf1.b.b1
 
     def compile(self, conf, return_packages=False):
         packages = conf.get('package', [])

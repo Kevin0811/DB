@@ -14,18 +14,34 @@ class BasicModel(nn.Module):
     def __init__(self, args):
         nn.Module.__init__(self)
 
-        #self.backbone = getattr(backbones, args['backbone'])(**args.get('backbone_args', {}))
-        #self.decoder = getattr(decoders, args['decoder'])(**args.get('decoder_args', {}))
+        print("Backbone: " + str(args['backbone']))
 
-        self.transpose = backbones.get_pose_net(50, True) # 50: ResNet50
+        if str(args['backbone']) == "DETR":
+            self.transpose = backbones.get_pose_net(50, True) # 50: ResNet50
+        else:
+            self.backbone = getattr(backbones, args['backbone'])(**args.get('backbone_args', {}))
+            self.decoder = getattr(decoders, args['decoder'])(**args.get('decoder_args', {}))
+
+        #self.transpose = backbones.get_pose_net(50, True) # 50: ResNet50
 
         #print(self.transpose)
-        summary(self.transpose, (3,480,480), batch_size=-1, device="cpu") #image size
+        if (args['backbone']) == "DETR":
+            try:
+                summary(self.transpose, (3,480,480), batch_size=-1, device="cpu") #image size
+            except:
+                print("skip summary")
+                #summary(self.transpose, (3,480,480), batch_size=-1, device="cuda") #image size
+        else:
+            print("skip summary")
 
-    def forward(self, data, *args, **kwargs):
-        
-        #return self.decoder(self.backbone(data), *args, **kwargs)
-        return self.transpose(data)
+    def forward(self, data,backbone_type, *args, **kwargs):        
+        #print(**kwargs)
+        #self.backbone_type = kwargs.get('backbone_type',"DETR")
+
+        if backbone_type == "DETR":
+            return self.transpose(data)
+
+        return self.decoder(self.backbone(data), *args, **kwargs)
 
 
 def parallelize(model, distributed, local_rank):
@@ -58,13 +74,13 @@ class SegDetectorModel(nn.Module):
     def model_name(args):
         return os.path.join('seg_detector', args['backbone'], args['loss_class'])
 
-    def forward(self, batch, training=True):
+    def forward(self, batch, training=True, backbone_type='DETR'):
         if isinstance(batch, dict):
             data = batch['image'].to(self.device)
         else:
             data = batch.to(self.device)
         data = data.float()
-        pred = self.model(data, training=self.training)
+        pred = self.model(data, backbone_type, training=self.training)
 
         if self.training:
             for key, value in batch.items():

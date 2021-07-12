@@ -17,7 +17,10 @@ class Trainer:
         self.logger = experiment.logger
         self.model_saver = experiment.train.model_saver
 
-        self.writer = SummaryWriter('./log/' + self.structure.builder.model_args['loss_class']+"_480") #image size
+        self.average_loss = 0
+        loss_class = self.structure.builder.model_args['loss_class']
+        self.backbone_type = self.structure.builder.model_args['backbone']
+        self.writer = SummaryWriter('./log/' + loss_class + "_" + self.backbone_type +"_480_2w") #image size
 
         # FIXME: Hack the save model path into logger path
         self.model_saver.dir_path = self.logger.save_dir(
@@ -25,6 +28,7 @@ class Trainer:
         self.current_lr = 0
 
         self.total = 0
+
 
     def init_device(self):
         if torch.cuda.is_available():
@@ -66,7 +70,7 @@ class Trainer:
         # Init start epoch and iter
         optimizer = self.experiment.train.scheduler.create_optimizer(
             model.parameters())
-
+            
         self.logger.report_time('Init')
 
         model.train()
@@ -111,8 +115,8 @@ class Trainer:
 
     def train_step(self, model, optimizer, batch, epoch, step, **kwards):
         optimizer.zero_grad()
-
-        results = model.forward(batch, training=True)
+        #print(self.experiment.structure.builder.model_args['backbone'])
+        results = model.forward(batch, training=True, backbone_type = self.backbone_type)
         #print(results.size())
         if len(results) == 2:
             l, pred = results
@@ -134,25 +138,37 @@ class Trainer:
         optimizer.step()
 
         for name, metric in metrics.items():
-            self.writer.add_scalar(name, metric.mean(), step)
+                self.writer.add_scalar(name, metric.mean(), step)
 
         self.writer.add_scalar('loss', l.mean(), step)
 
+        self.average_loss += l.mean()
+
         if step % self.experiment.logger.log_interval == 0:
+            '''
             if isinstance(l, dict):
                 line = '\t'.join(line)
                 log_info = '\t'.join(['step:{:6d}', 'epoch:{:3d}', '{}', 'lr:{:.4f}']).format(step, epoch, line, self.current_lr)
                 self.logger.info(log_info)
             else:
-                self.logger.info('step: %6d, epoch: %3d, loss: %.6f, lr: %f' % (
-                    step, epoch, loss.item(), self.current_lr))
+                self.logger.info('step: %6d, epoch: %3d, average loss: %.6f, lr: %f' % (
+                    step, epoch, self.average_loss/100, self.current_lr))
             self.logger.add_scalar('loss', loss, step)
             self.logger.add_scalar('learning_rate', self.current_lr, step)
+            
             for name, metric in metrics.items():
-                self.logger.add_scalar(name, metric.mean(), step)
-                self.logger.info('%s: %6f' % (name, metric.mean()))
+                #self.logger.add_scalar(name, metric.mean(), step)
+                #self.logger.info('%s: %6f' % (name, metric.mean()))
+                self.writer.add_scalar(name, metric.mean(), step)
+            '''
 
-            self.logger.report_time('Logging')
+            self.avg_loss = round(self.average_loss.item()/self.experiment.logger.log_interval, 3)
+            self.writer.add_scalar('average_loss', self.average_loss/self.experiment.logger.log_interval, step)
+            print('[' + str(epoch).center(3) + '|' + str(step).center(6) + '] Avg Loss: ' + str(self.avg_loss).rjust(5))
+
+            self.average_loss = 0
+
+            #self.logger.report_time('Logging')
 
     def validate(self, validation_loaders, model, epoch, step):
         all_matircs = {}
@@ -182,7 +198,7 @@ class Trainer:
         raw_metrics = []
         vis_images = dict()
         for i, batch in tqdm(enumerate(data_loader), total=len(data_loader)):
-            pred = model.forward(batch, training=False)
+            pred = model.forward(batch, training=False, backbone_type = self.backbone_type)
             output = self.structure.representer.represent(batch, pred)
             raw_metric, interested = self.structure.measurer.validate_measure(
                 batch, output)

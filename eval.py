@@ -85,6 +85,10 @@ class Eval:
         experiment.load('evaluation', **args)
         self.data_loaders = experiment.evaluation.data_loaders
         self.args = cmd
+
+        self.exp_args = args
+        self.backbone_type = self.exp_args['structure']['builder']['model_args']['backbone']
+
         self.logger = experiment.logger
         model_saver = experiment.train.model_saver
         self.structure = experiment.structure
@@ -173,7 +177,7 @@ class Eval:
                     if self.args['test_speed']:
                         time_cost = self.report_speed(model, batch, times=50)
                         continue
-                    pred = model.forward(batch, training=False)
+                    pred = model.forward(batch, training=False, backbone_type = self.backbone_type)
                     #print(pred)
                     output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon']) 
                     if not os.path.isdir(self.args['result_dir']):

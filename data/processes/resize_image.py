@@ -94,11 +94,12 @@ class ResizeData(_ResizeImage, DataProcess):
         height, width = data['image'].shape[:2]
         new_height, new_width = self.get_image_size(data['image'])
         data[self.key] = self.resize_or_pad(data[self.key])
-
+        '''
         charboxes = data[self.box_key]
         data[self.box_key] = charboxes.copy()
         data[self.box_key][:, :, 0] = data[self.box_key][:, :, 0] * \
             new_width / width
         data[self.box_key][:, :, 1] = data[self.box_key][:, :, 1] * \
             new_height / height
+        '''
         return data

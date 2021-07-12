@@ -259,7 +259,7 @@ class TransPose(nn.Module):
         encoder_layers_num = 3 #3
         n_head = 8
         pos_embedding_type = "sine"
-        w, h = [480, 480] #image size
+        w, h = [480, 480] # image size
 
         self.reduce = nn.Conv2d(self.inplanes, d_model, 1, bias=False)
         self._make_position_embedding(w, h, d_model, pos_embedding_type)
@@ -303,6 +303,7 @@ class TransPose(nn.Module):
             nn.Sigmoid()
         )
         '''
+        # Binarize
         self.final_layer = nn.Sequential(
             nn.Conv2d(
             in_channels=d_model,
@@ -318,7 +319,7 @@ class TransPose(nn.Module):
             nn.ConvTranspose2d(d_model//4, 1, 2, 2),
             nn.Sigmoid()
         )
-
+        # Thresh
         self.final_layer_t = nn.Sequential(
             nn.Conv2d(
             in_channels=d_model,

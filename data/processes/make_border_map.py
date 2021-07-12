@@ -15,7 +15,7 @@ class MakeBorderMap(DataProcess):
     '''
     shrink_ratio = State(default=0.4)
     thresh_min = State(default=0.3)
-    thresh_max = State(default=0.7)
+    thresh_max = State(default=0.5)
 
     def __init__(self, cmd={}, *args, **kwargs):
         self.load_all(cmd=cmd, **kwargs)
