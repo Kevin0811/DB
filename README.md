@@ -2,17 +2,32 @@
 tags: Project, Programming
 ---
 
+# Real-time Scene Text Detection
+This is a PyToch implementation of "**Real-time Scene Text Detection with Differentiable Binarization**".  
+[This paper](https://arxiv.org/abs/1911.08947) presents a real-time arbitrary-shape scene text detector(任意形狀的場景文本檢測器)  
+Achieving the state-of-the-art performance on standard benchmarks.  
+
+Part of the code is inherited from [MegReader](https://github.com/Megvii-CSG/MegReader).
+
+## TODO
+- [x] 使用DETR模型
+- [ ] 使用deformable DETR模型 [[GitHub]](https://github.com/jiangxiluning/Deformable-DETR)
+- [x] 加入ReCTS數據集
+- [ ] 顯示Ground Truth標記圖片
+- [x] Loss function採用L1BCEMiningLoss或L1LeakyDiceLoss
+- [x] input尺寸嘗試320和480
+
 ## News
 * DB is included in [WeChat OCR engine](https://mp.weixin.qq.com/s/6IGXof3KWVnN8z1i2YOqJA)
 * DB is included in [OpenCV](https://github.com/opencv/opencv/blob/master/doc/tutorials/dnn/dnn_text_spotting/dnn_text_spotting.markdown)
 * DB is included in [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR)
 
-# Introduction DB
-This is a PyToch implementation of "Real-time Scene Text Detection with Differentiable Binarization". [This paper](https://arxiv.org/abs/1911.08947) presents a real-time arbitrary-shape scene text detector, achieving the state-of-the-art performance on standard benchmarks.
-
-Part of the code is inherited from [MegReader](https://github.com/Megvii-CSG/MegReader).
-
-Heatmap-based Object Detection
+## Key Point
+* DB: differentiable binarization 可微二值化
+* Heatmap-based Object Detection  
+>Backbone(ImageNet or ResNet) + Decoder(SegDetector)
+>>模型由兩半部組成：前半部提取圖片特徵，後半部對特徵進行解碼輸出熱力圖  
+再將熱力圖以影像處理的方式(OpenCV)產生Bounding Box
 
 ## Installation
 
@@ -68,7 +83,7 @@ buildt\lib.win-amd64-3.61\deform_cony_cuda.cp36-win_amd64.pyd
 buildt\lib.win-amd64-3.61\deform_pool_cuda.cp36-win_am
 ```
 
-##### 常出現的錯誤
+##### 安裝過程常出現的錯誤
 
 ###### Error 1
 ```
@@ -133,12 +148,22 @@ validation: &validate
         exempt: 1
 ```
 
-
 ### 示範
 ```
 python demo2csv.py experiments/seg_detector/ic15_resnet50_deform_thre.yaml
 ```
 輸出`val_images`資料夾中的圖片預測結果至`.csv`檔案
+
+### 監看
+```bash
+cd C:\Users\Host\Desktop\OCR\DB
+tensorboard --logdir log
+```
+URL
+```
+http://localhost:6006/
+```
+---
 ## Models
 此處下載<font color="#f00">預訓練的權重檔案`.pth`</font>  
 Download Trained models [Baidu Drive](https://pan.baidu.com/s/1vxcdpOswTK6MxJyPIJlBkA) (download code: p6u3), [Google Drive](https://drive.google.com/open?id=1T9n0HTP3X3Y_nJ0D1ekMhCQRHntORLJG).
@@ -153,6 +178,7 @@ Download Trained models [Baidu Drive](https://pan.baidu.com/s/1vxcdpOswTK6MxJyPI
 `C:\Users\Host\Desktop\OCR\DB\workspace\SegDetectorModel-seg_detector\deformable_resnet50\L1BalanceCELoss\model`中的`final`檔案(沒有副檔名)
 >開始訓練前須先自行在`DB`資料夾中新增`workspace`資料夾 (Windows環境)
 
+---
 ## Datasets
 
 DB預設路徑於`icdar2015`資料夾中
@@ -177,10 +203,18 @@ The root of the dataset directory can be ```DB/datasets/```.
 
 * 此處下載<font color="#f00">訓練集(4000張圖)的標記檔案`.txt`</font> 和<font color="#f00">驗證集(500張圖)的標記資料`.txt`與圖片檔`.jpg`</font>  
 測試集選用在`TD_TR`資料夾中`TD500`中的`test_images`中的200張圖片  
-Download the converted ground-truth and data list [Baidu Drive](https://pan.baidu.com/s/1BPYxcZnLXN87rQKmz9PFYA) (download code: mz0a), [Google Drive](https://drive.google.com/open?id=12ozVTiBIqK8rUFWLUrlquNfoQxL2kAl7). The images of each dataset can be obtained from their official website.
+[Baidu Drive](https://pan.baidu.com/s/1BPYxcZnLXN87rQKmz9PFYA) (download code: mz0a)  
+[Google Drive](https://drive.google.com/open?id=12ozVTiBIqK8rUFWLUrlquNfoQxL2kAl7)
 
 * <font color="#f00">訓練集圖片</font>於此[下載](https://tbrain.trendmicro.com.tw/Competitions/Download/13?fileName=TrainDataset_0506.zip)
 * <font color="#f00">測試集圖片</font>於此[下載](https://tbrain.trendmicro.com.tw/Competitions/Download/13?fileName=PublicTestDataset.zip)
+* 更多的數據集 於此[下載](https://drive.google.com/file/d/1orMtLhJt3rQl3pMoLm31eh-SmDG74W1K/view)  
+**ICDAR 2019在招牌上阅读中文文本的稳健阅读挑战**  
+ReCTS数据集包括25,000张带标签的图像，这些图像是在不受控制的条件下通过行動裝置摄像机野外采集的。它主要侧重于餐厅招牌上的中文文本。  
+数据集分为训练集和测试集。**训练集包含20,000张图像**，**测试集包含5,000张图像**。  
+四个任务：（1）字符识别，（2）文本行识别，（3）文本行检测和（4）端到端文本发现。  
+詳細說明：[CSDN](https://blog.csdn.net/qq_41895190/article/details/103253326)
+
 
 ## Testing
 ### Prepar dataset
@@ -295,13 +329,16 @@ Please cite the related works in your publications if it helps your research:
     +  resnet 50
     +  resnet 101
     +  resnet 152
-    +  deformable_resnet18 (deformable 可變形)
+    +  deformable_resnet18 (deformable 多尺度)
     +  deformable_resnet50 (Best)
+  - DETR (Transpose)🆕
 * concern
+  - config 讀取`.yaml`檔
 * data
 * decoders
+  - SegDetector
   - SegDetectorLossBuilder (可選 Loss function)
-    + **DiceLoss**  
+    + **DiceLoss**  [](https://blog.csdn.net/comeonow/article/details/103214583)  
     DiceLoss on `binary`.  
     For SegDetector without adaptive module.
     + **BalanceBCELoss**  
@@ -347,7 +384,7 @@ model_args:
   - represrnters
     + seg_dectector_representer → boxes_from_bitmap() 將熱力圖轉為框框
   - visualizer
-  - model (Backbone + decoder)
+  - model (整合 Backbone + decoder = BasicModel + Loss funtcion)
 * training
   - checkpoint
   - learning rate
@@ -361,28 +398,31 @@ model_args:
     + train_step 訓練與更新權重
   - eval
   - demo
-  - demo2csv (輸出答案並儲存為.csv)
+  - demo2csv🆕 (輸出答案並儲存為.csv)
 
 
-### batch (model input)
-
+### 輸入&輸出
+#### Heatmap
 ```python
 pred = model.forward(batch, training=False)
 ```
-
-### pred (model output) 
-[1, H, W] 值介於0~1之間
-```python
-output = self.structure.representer.represent(batch, pred, is_output_polygon=self.args['polygon'])
-```
-
 * batch: a dict produced by dataloaders.
   - **image** tensor of shape (N, C, H, W).
   - **polygons** tensor of shape (N, K, 4, 2), the polygons of objective regions.
   - **ignore_tags** tensor of shape (N, K), indicates whether a region is ignorable or not.
   - **shape** the original shape of images.
   - **filename** the original filenames of images.
-* pred: model output (模型輸出的預測值包含三樣，其中binary必備，其他兩項可選)
+* pred: model output  [1, H, W] 值介於0~1之間  
+模型輸出的預測值包含三樣，其中binary必備，其他兩項可選
   - **binary** text region segmentation map, with shape (N, 1, H, W)
   - **thresh** [if exists] thresh hold prediction with shape (N, 1, H, W)
   - **thresh_binary** [if exists] binarized with threshhold, (N, 1, H, W)
+
+#### Bounding box
+```python
+output = self.structure.representer.represent(batch, pred, is_output_polygon = False)
+```
+### 零碎的參考連結
+* 解析config.yaml  
+  - [anyconfig](https://github.com/ssato/python-anyconfig)
+  - [munch](https://www.jianshu.com/p/806209d776dc)
