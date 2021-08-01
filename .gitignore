@@ -8,6 +8,7 @@ workspace
 *.lock
 *.csv
 *.pth
+*.rar
 
 # C extensions
 *.so
